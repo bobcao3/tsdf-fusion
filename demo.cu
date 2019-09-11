@@ -108,9 +108,13 @@ int main(int argc, char * argv[]) {
     trunc_margin = atof(argv[10]);
   }
 
+  std::cout << cam_K_file << " " << data_path << " " << base_frame_idx << " " << first_frame_idx << " " << num_frames << std::endl;
+
   // Read camera intrinsics
   std::vector<float> cam_K_vec = LoadMatrixFromFile(cam_K_file, 3, 3);
   std::copy(cam_K_vec.begin(), cam_K_vec.end(), cam_K);
+
+  std::cout << "Camera Intrinsics read" << std::endl;
 
   // Read base frame camera pose
   std::ostringstream base_frame_prefix;
@@ -118,6 +122,8 @@ int main(int argc, char * argv[]) {
   std::string base2world_file = data_path + "/frame-" + base_frame_prefix.str() + ".pose.txt";
   std::vector<float> base2world_vec = LoadMatrixFromFile(base2world_file, 4, 4);
   std::copy(base2world_vec.begin(), base2world_vec.end(), base2world);
+
+  std::cout << "Base frame pose read" << std::endl;
 
   // Invert base frame camera pose to get world-to-base frame transform 
   float base2world_inv[16] = {0};

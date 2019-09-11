@@ -52,13 +52,19 @@ void SaveVoxelGrid2SurfacePointCloud(const std::string &file_name, int voxel_gri
 
 // Load an M x N matrix from a text file (numbers delimited by spaces/tabs)
 // Return the matrix as a float vector of the matrix in row-major order
+
+#include <iostream>
+
 std::vector<float> LoadMatrixFromFile(std::string filename, int M, int N) {
   std::vector<float> matrix;
+  matrix.resize(M * N);
   FILE *fp = fopen(filename.c_str(), "r");
-  for (int i = 0; i < M * N; i++) {
-    float tmp;
-    int iret = fscanf(fp, "%f", &tmp);
-    matrix.push_back(tmp);
+  for (int i = 0; i < M; i++) {
+    for (int j = 0; j < N; j++) {
+      float tmp;
+      int iret = fscanf(fp, "%f", &tmp);
+      matrix[i * N + j] = tmp;
+    }
   }
   fclose(fp);
   return matrix;
