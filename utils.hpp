@@ -5,16 +5,22 @@
 #include <vector>
 #include <opencv2/opencv.hpp>
 
+enum OccupancyState {
+  FREE,
+  UNKNOWN,
+  OCCUPIED
+};
+
 // Compute surface points from TSDF voxel grid and save points to point cloud file
 void SaveVoxelGrid2SurfacePointCloud(const std::string &file_name, int voxel_grid_dim_x, int voxel_grid_dim_y, int voxel_grid_dim_z,
                                      float voxel_size, float voxel_grid_origin_x, float voxel_grid_origin_y, float voxel_grid_origin_z,
-                                     float * voxel_grid_TSDF, float * voxel_grid_weight,
+                                     float * voxel_grid_TSDF, float * voxel_grid_weight, char * voxel_grid_occupancy,
                                      float tsdf_thresh, float weight_thresh) {
 
   // Count total number of points in point cloud
   int num_pts = 0;
   for (int i = 0; i < voxel_grid_dim_x * voxel_grid_dim_y * voxel_grid_dim_z; i++)
-    if (std::abs(voxel_grid_TSDF[i]) < tsdf_thresh && voxel_grid_weight[i] > weight_thresh)
+    if (voxel_grid_occupancy[i] == OCCUPIED)//std::abs(voxel_grid_TSDF[i]) < tsdf_thresh && voxel_grid_weight[i] > weight_thresh)
       num_pts++;
 
   // Create header for .ply file
@@ -25,13 +31,19 @@ void SaveVoxelGrid2SurfacePointCloud(const std::string &file_name, int voxel_gri
   fprintf(fp, "property float x\n");
   fprintf(fp, "property float y\n");
   fprintf(fp, "property float z\n");
+  fprintf(fp, "property uchar red\n");
+  fprintf(fp, "property uchar green\n");
+  fprintf(fp, "property uchar blue\n");
   fprintf(fp, "end_header\n");
+
+  uint8_t occupied_color[3] = {255, 0, 0};
+  uint8_t unknow_color[3] = {180, 180, 180};
 
   // Create point cloud content for ply file
   for (int i = 0; i < voxel_grid_dim_x * voxel_grid_dim_y * voxel_grid_dim_z; i++) {
 
     // If TSDF value of voxel is less than some threshold, add voxel coordinates to point cloud
-    if (std::abs(voxel_grid_TSDF[i]) < tsdf_thresh && voxel_grid_weight[i] > weight_thresh) {
+    if (voxel_grid_occupancy[i] == OCCUPIED) {//std::abs(voxel_grid_TSDF[i]) < tsdf_thresh && voxel_grid_weight[i] > weight_thresh) {
 
       // Compute voxel indices in int for higher positive number range
       int z = floor(i / (voxel_grid_dim_x * voxel_grid_dim_y));
@@ -45,6 +57,12 @@ void SaveVoxelGrid2SurfacePointCloud(const std::string &file_name, int voxel_gri
       fwrite(&pt_base_x, sizeof(float), 1, fp);
       fwrite(&pt_base_y, sizeof(float), 1, fp);
       fwrite(&pt_base_z, sizeof(float), 1, fp);
+
+      if (voxel_grid_occupancy[i] == OCCUPIED) {
+        fwrite(occupied_color, sizeof(uint8_t), 3, fp);
+      } else {
+        fwrite(unknow_color, sizeof(uint8_t), 3, fp);
+      }
     }
   }
   fclose(fp);
